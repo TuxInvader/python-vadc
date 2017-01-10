@@ -20,9 +20,13 @@ class Vadc(object):
         self.host = host
         self.user = user
         self.passwd = passwd
-        self.logger = logger if logger else logging.getLogger()
         self.client = None
         self._cache = {}
+        if logger is None:
+            logging.basicConfig()
+            self.logger = logging.getLogger()
+        else:
+            self.logger = logger
 
     def _debug(self, message):
         if Vadc.DEBUG:
