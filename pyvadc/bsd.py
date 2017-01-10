@@ -5,7 +5,7 @@ from vtm import Vtm
 
 class Bsd(Vadc):
 
-    def __init__(self, config, logger):
+    def __init__(self, config, logger=None):
 
         try:
             host = config['brcd_sd_host']
@@ -56,7 +56,7 @@ class Bsd(Vadc):
                 return vtm
         return None
 
-    def add_vtm(self, vtm, password, address, bw, fp):
+    def add_vtm(self, vtm, password, address, bw, fp='STM-400_full'):
         url = self.baseUrl + "/instance/?managed=false"
 
         if address is None:
@@ -104,7 +104,7 @@ class Bsd(Vadc):
             self._cache_store("get_vtm_" + tag, vtm)
         return vtm
 
-    def list_vtms(self, full, deleted, stringify):
+    def list_vtms(self, full=False, deleted=False, stringify=False):
         instances = self._cache_lookup("list_vtms")
         if instances is None:
             url = self.baseUrl + "/instance/"
