@@ -46,31 +46,45 @@ class Vtm(Vadc):
         config = res.json()
         return config["properties"]["basic"]["nodes_table"]
 
-    def _get_vs_config(self, name):
-        url = self.configUrl + "/virtual_servers/" + name
+    def _get_single_config(self, obj_type, name):
+        url = self.configUrl + "/" + obj_type + "/" + name
         res = self._get_config(url)
         if res.status_code != 200:
-            raise Exception("Failed to get VS. Result: {}, {}".format(res.status_code, res.text))
+            raise Exception("Failed to get " + obj_type + " Configuration." +
+                " Result: {}, {}".format(res.status_code, res.text))
+        return res.json()
 
-        config = res.json()
-        return config
+    def _get_multiple_configs(self, obj_type, names=[]):
+        url = self.configUrl + "/" + obj_type + "/"
+        res = self._get_config(url)
+        if res.status_code != 200:
+            raise Exception("Failed to list " + obj_type +
+                ". Result: {}, {}".format(res.status_code, res.text))
+        listing = res.json()["children"]
+        output = {}
+        for obj in [obj["name"] for obj in listing]:
+            if len(names) > 0 and (obj not in names):
+                continue
+            output[obj] = self._get_single_config(obj_type, obj)
+        return output
 
-    def _set_vs_config(self, name, config):
-        url = self.configUrl + "/virtual_servers/" + name
+    def _set_single_config(self, obj_type, name, config):
+        url = self.configUrl + "/" + obj_type + "/" + name
         res = self._push_config(url, config)
         if res.status_code != 200:
-            raise Exception("Failed to set VS. Result: {}, {}".format(res.status_code, res.text))
+            raise Exception("Failed to set " + obj_type + ". Result: {}, {}".format(
+                res.status_code, res.text))
         return res
 
     def _get_vs_rules(self, name):
-        config = self._get_vs_config(name)
+        config = self._get_single_config("virtual_servers", name)
         rules = {k: config["properties"]["basic"][k] for k in
                 ("request_rules", "response_rules", "completionrules")}
         return rules
 
     def _set_vs_rules(self, name, rules):
         config = {"properties": {"basic": rules}}
-        res = self._set_vs_config(name, config)
+        res = self._set_single_config("virtual_servers", name, config)
         if res.status_code != 200:
             raise Exception("Failed set VS Rules. Result: {}, {}".format(res.status_code, res.text))
 
@@ -161,6 +175,12 @@ class Vtm(Vadc):
         if res.status_code != 204:
             raise Exception("Failed to del pool. Result: {}, {}".format(res.status_code, res.text))
 
+    def get_pool(self, name):
+        return self._get_single_config("pools", name)
+
+    def get_pools(self, names=[]):
+        return self._get_multiple_configs("pools", names)
+
     def add_vserver(self, name, pool, tip, port, protocol, extra=None):
         url = self.configUrl + "/virtual_servers/" + name
         config = {"properties": {"basic": {"pool": pool, "port": port, "protocol": protocol,
@@ -175,6 +195,12 @@ class Vtm(Vadc):
         res = self._del_config(url)
         if res.status_code != 204:
             raise Exception("Failed to del VS. Result: {}, {}".format(res.status_code, res.text))
+
+    def get_vserver(self, name):
+        return self._get_single_config("virtual_servers", name)
+
+    def get_vservers(self, names=[]):
+        return self._get_multiple_configs("virtual_servers", names)
 
     def add_tip(self, name, vtms, addresses, extra=None):
         url = self.configUrl + "/traffic_ip_groups/" + name
@@ -191,6 +217,12 @@ class Vtm(Vadc):
         res = self._del_config(url)
         if res.status_code != 204:
             raise Exception("Failed to del TIP. Result: {}, {}".format(res.status_code, res.text))
+
+    def get_tip(self, name):
+        return self._get_single_config("traffic_ip_groups", name)
+
+    def get_tips(self, names=[]):
+        return self._get_multiple_configs("traffic_ip_groups", names)
 
     def add_server_cert(self, name, public, private):
         url = self.configUrl + "/ssl/server_keys/" + name
