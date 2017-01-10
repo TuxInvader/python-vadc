@@ -28,7 +28,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/tuxinvader/python-vadc',
+    url='https://github.com/TuxInvader/python-vadc',
 
     # Author details
     author='Mark Boddington',
