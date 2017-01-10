@@ -1,0 +1,43 @@
+*.py[cod]
+*.sqlite
+*.swp
+*.log
+*.class
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+.venv
+eggs
+parts
+#bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib64
+virtualenv
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+cover
+coverage*.xml
+.tox
+nosetests.xml
+
+# Mr Developer
+.idea
+.DS_Store
+._*
+
+# Editor Saves
+*~
+\#*\#
