@@ -10,6 +10,7 @@ To install, either clone from github or "pip install pyvadc"
 
 To use (standalone vTM):
 
+::
    #!/usr/bin/python
    from pyvadc import Vtm, VtmConfig
    config = VtmConfig("https://vtm1:9070/", "admin", "password")
@@ -20,6 +21,7 @@ To use (standalone vTM):
 
 To Use with BSD:
 
+::
    #!/usr/bin/python
    from pyvadc import Bsd, Vtm, BsdConfig
    config = BsdConfig("https://sd1:8100/", "admin", "password")
@@ -30,6 +32,7 @@ To Use with BSD:
    # We can now manage vTMs by proxying.
    vtm1 = Vtm(config, vtm="vtm1")
    vtm1.get_pools()
+   ...
 
 Enjoy!
 
