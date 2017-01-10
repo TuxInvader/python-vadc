@@ -10,8 +10,8 @@ To install, either clone from github or "pip install pyvadc"
 
 To use (standalone vTM):
 
-::
-   #!/usr/bin/python
+.. code-block:: python
+
    from pyvadc import Vtm, VtmConfig
    config = VtmConfig("https://vtm1:9070/", "admin", "password")
 
@@ -21,8 +21,8 @@ To use (standalone vTM):
 
 To Use with BSD:
 
-::
-   #!/usr/bin/python
+.. code-block:: python
+
    from pyvadc import Bsd, Vtm, BsdConfig
    config = BsdConfig("https://sd1:8100/", "admin", "password")
    bsd = Bsd(config)
@@ -35,4 +35,3 @@ To Use with BSD:
    ...
 
 Enjoy!
-
