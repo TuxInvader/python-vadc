@@ -92,11 +92,11 @@ class Vtm(Vadc):
         rules = self._get_vs_rules(vsname)
         if insert:
             if rulename in rules["request_rules"]:
-                raise Exception("VServer {} already in maintenance".format(vsname))
+                raise Exception("Rule {} already in vserver {}".format(rulename, vsname))
             rules["request_rules"].insert(0, rulename)
         else:
             if rulename not in rules["request_rules"]:
-                raise Exception("VServer {} is not in maintenance".format(vsname))
+                raise Exception("Rule {} already in vserver {}".format(rulename, vsname))
             rules["request_rules"].remove(rulename)
         self._set_vs_rules(vsname, rules)
 
