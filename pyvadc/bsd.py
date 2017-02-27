@@ -36,6 +36,14 @@ class Bsd(Vadc):
         order += (["legacy_" + str(ver) for ver in legacy])
         return order
 
+    def ping(self):
+        url = self.baseUrl + "/ping"
+        res = self._get_config(url)
+        if res.status_code != 204:
+            raise Exception("Ping unsuccessful")
+        config = res.json()
+        return config["members"]
+
     def get_cluster_members(self, cluster):
         url = self.baseUrl + "/cluster/" + cluster
         res = self._get_config(url)
