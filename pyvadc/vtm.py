@@ -100,6 +100,13 @@ class Vtm(Vadc):
             rules["request_rules"].remove(rulename)
         self._set_vs_rules(vsname, rules)
 
+    def upload_rule(self, rulename, ts_file):
+        url = self.configUrl + "/rules/" + rulename
+        res = self._upload_raw_binary(url, ts_file)
+        if res.status_code != 201 and res.status_code != 204:
+            raise Exception("Failed to upload rule." +
+                " Result: {}, {}".format(res.status_code, res.text))
+
     def enable_maintenance(self, vsname, rulename="maintenance", enable=True):
         self.insert_rule(vsname, rulename, enable)
 
