@@ -2,6 +2,8 @@
 
 from vadc import Vadc
 
+import json
+
 class Vtm(Vadc):
 
     def __init__(self, config, logger=None, vtm=None):
@@ -407,4 +409,15 @@ class Vtm(Vadc):
             raise Exception("Failed to Set Action: {}".format(action) +
                 " for Event: {}.".format(event) +
                 " Result: {}, {}".format(res.status_code, res.text))
+
+    def set_global_settings(self, settings=None):
+        if settings is None:
+            return
+
+        url = self.configUrl + "/global_settings"
+        jsonsettings = json.loads(settings, encoding="utf-8")
+
+        res = self._push_config(url, jsonsettings)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to set global settings. Result: {}, {}".format(res.status_code, res.text))
 
