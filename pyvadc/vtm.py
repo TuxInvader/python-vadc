@@ -156,6 +156,16 @@ class Vtm(Vadc):
         if res.status_code != 201 and res.status_code != 200:
             raise Exception("Failed to add pool. Result: {}, {}".format(res.status_code, res.text))
 
+    def add_monitor(self, name, monitor_type, machine=None, extra=None):
+        url = self.configUrl + '/monitors/' + name
+        if machine is not None:
+            config = {"properties": {"basic" :{"type": monitor_type, "machine": machine, "scope": "poolwide"}}}
+        else:
+            config = {"properties": {"basic" :{"type": monitor_type}}}
+        res = self._push_config(url, config, extra=extra)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to add monitor. Result: {}, {}".format(res.status_code, res.text))
+
     def add_pool(self, name, nodes, algorithm, persistence, monitors, extra=None):
         url = self.configUrl + "/pools/" + name
 
