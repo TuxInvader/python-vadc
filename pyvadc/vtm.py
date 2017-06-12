@@ -377,6 +377,13 @@ class Vtm(Vadc):
             raise Exception("Failed to upload file." +
                 " Result: {}, {}".format(res.status_code, res.text))
 
+    def upload_dns_zone_file(self, name, filename):
+        url = self.configUrl + "/dns_server/zone_files/" + name
+        res = self._upload_raw_binary(url, filename)
+        if res.status_code != 201 and res.status_code != 204:
+            raise Exception("Failed to upload file." +
+                " Result: {}, {}".format(res.status_code, res.text))
+
     def upload_action_program(self, name, filename):
         url = self.configUrl + "/action_programs/" + name
         res = self._upload_raw_binary(url, filename)
