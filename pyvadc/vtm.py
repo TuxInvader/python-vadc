@@ -345,6 +345,41 @@ class Vtm(Vadc):
             raise Exception("Failed to add GLB location" +
                     " Result: {}, {}".format(res.status_code, res.text))
 
+    def add_glb_service(self, name, algorithm, rules, locations, domains, extra=None):
+        url = self.configUrl + '/glb_services/' + name
+
+        rulesStr = ''
+        if rules is not None:
+            for rule in rules:
+                rulesStr = rulesStr + '"{}",'.format(rule)
+            # remove the last ','
+            rulesStr = rulesStr[:-1]
+
+        # a location is a dict of list, with:
+        #   list[0] is the monitoring name
+        #   list[1] is the IP of the location (one IP per location allowed for now)
+        locationsStr = ''
+        locationsOrderStr = ''
+        for key,value in locations.iteritems():
+            locationsStr = locationsStr + '{{"monitors": [ "{}" ], "ips": [ "{}" ], "location": "{}"}},'.format(value[0], value[1], key)
+            locationsOrderStr = locationsOrderStr + '"{}",'.format(key)
+        # remove the last ','
+        locationsStr = locationsStr[:-1]
+        locationsOrderStr = locationsOrderStr[:-1]
+        #print locationsStr
+
+        domainsStr = ''
+        for domain in domains:
+            domainsStr = domainsStr + '"{}",'.format(domain)
+        domainsStr = domainsStr[:-1]
+
+        config = json.loads('{{"properties": {{"basic": {{"rules": [ {} ], "location_settings": [ {} ], "enabled": true, "algorithm": "{}", "chained_location_order": [ {} ], "domains": [ {} ] }} }} }}'.format(rulesStr, locationsStr, algorithm, locationsOrderStr, domainsStr))
+
+        res = self._push_config(url, config, extra=extra)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to add GLB service" +
+                    " Result: {}, {}".format(res.status_code, res.text))
+
     def list_backups(self):
         if self.version < 3.9:
             raise Exception("Backups require vTM 11.0 or newer")
