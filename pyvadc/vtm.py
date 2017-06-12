@@ -298,6 +298,14 @@ class Vtm(Vadc):
             raise Exception("Failed to delete Session Persistence Class." +
                 " Result: {}, {}".format(res.status_code, res.text))
 
+    def add_dns_zone(self, name, origin, zonefile):
+        url = self.configUrl + '/dns_server/zones/' + name
+        config = {"properties": {"basic": {"zonefile": zonefile, "origin": origin}}}
+        res = self._push_config(url, config)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to add dns zone" +
+                    " Result: {}, {}".format(res.status_code, res.text))
+
     def list_backups(self):
         if self.version < 3.9:
             raise Exception("Backups require vTM 11.0 or newer")
