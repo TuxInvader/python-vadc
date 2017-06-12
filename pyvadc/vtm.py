@@ -306,6 +306,35 @@ class Vtm(Vadc):
             raise Exception("Failed to add dns zone" +
                     " Result: {}, {}".format(res.status_code, res.text))
 
+    def add_glb_location(self, name, longitude, latitude, location_id):
+        my_location_id = 1
+        if location_id is not None:
+            my_location_id = location_id
+        else:
+            # if location_id is not set, we'll have to find one
+            url = self.configUrl + '/locations/'
+            res = self._get_config(url)
+            if res.status_code != 200:
+                raise Exception("Failed to get location list: {}, {}".format(res.status_code, res.text))
+
+            location_list = res.json()['children']
+            for location in location_list:
+                url = self.configUrl + '/locations/' + location['name']
+                res = self._get_config(url)
+                tmp = res.json()["properties"]["basic"]["id"]
+                if tmp > my_location_id:
+                    my_location_id = tmp
+
+            # we need to pick up the next one available
+            my_location_id = my_location_id + 1
+
+        url = self.configUrl + '/locations/' + name
+        config = json.loads('{"properties": {"basic": {"type": "glb", "longitude":' + longitude + ', "latitude": ' + latitude + ', "id": ' + str(my_location_id) + '}}}', parse_float = float)
+        res = self._push_config(url, config)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to add GLB location" +
+                    " Result: {}, {}".format(res.status_code, res.text))
+
     def list_backups(self):
         if self.version < 3.9:
             raise Exception("Backups require vTM 11.0 or newer")
