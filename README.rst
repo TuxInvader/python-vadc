@@ -19,7 +19,7 @@ To use (standalone vTM):
    vtm.get_pools()
    ...
 
-To Use with BSD:
+To Use with Brocade Services Director (BSD):
 
 .. code-block:: python
 

@@ -2,6 +2,8 @@
 
 from vadc import Vadc
 
+import json
+
 class Vtm(Vadc):
 
     def __init__(self, config, logger=None, vtm=None):
@@ -154,6 +156,16 @@ class Vtm(Vadc):
         if res.status_code != 201 and res.status_code != 200:
             raise Exception("Failed to add pool. Result: {}, {}".format(res.status_code, res.text))
 
+    def add_monitor(self, name, monitor_type, machine=None, extra=None):
+        url = self.configUrl + '/monitors/' + name
+        if machine is not None:
+            config = {"properties": {"basic" :{"type": monitor_type, "machine": machine, "scope": "poolwide"}}}
+        else:
+            config = {"properties": {"basic" :{"type": monitor_type}}}
+        res = self._push_config(url, config, extra=extra)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to add monitor. Result: {}, {}".format(res.status_code, res.text))
+
     def add_pool(self, name, nodes, algorithm, persistence, monitors, extra=None):
         url = self.configUrl + "/pools/" + name
 
@@ -296,6 +308,78 @@ class Vtm(Vadc):
             raise Exception("Failed to delete Session Persistence Class." +
                 " Result: {}, {}".format(res.status_code, res.text))
 
+    def add_dns_zone(self, name, origin, zonefile):
+        url = self.configUrl + '/dns_server/zones/' + name
+        config = {"properties": {"basic": {"zonefile": zonefile, "origin": origin}}}
+        res = self._push_config(url, config)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to add dns zone" +
+                    " Result: {}, {}".format(res.status_code, res.text))
+
+    def add_glb_location(self, name, longitude, latitude, location_id):
+        my_location_id = 1
+        if location_id is not None:
+            my_location_id = location_id
+        else:
+            # if location_id is not set, we'll have to find one
+            url = self.configUrl + '/locations/'
+            res = self._get_config(url)
+            if res.status_code != 200:
+                raise Exception("Failed to get location list: {}, {}".format(res.status_code, res.text))
+
+            location_list = res.json()['children']
+            for location in location_list:
+                url = self.configUrl + '/locations/' + location['name']
+                res = self._get_config(url)
+                tmp = res.json()["properties"]["basic"]["id"]
+                if tmp > my_location_id:
+                    my_location_id = tmp
+
+            # we need to pick up the next one available
+            my_location_id = my_location_id + 1
+
+        url = self.configUrl + '/locations/' + name
+        config = json.loads('{"properties": {"basic": {"type": "glb", "longitude":' + longitude + ', "latitude": ' + latitude + ', "id": ' + str(my_location_id) + '}}}', parse_float = float)
+        res = self._push_config(url, config)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to add GLB location" +
+                    " Result: {}, {}".format(res.status_code, res.text))
+
+    def add_glb_service(self, name, algorithm, rules, locations, domains, extra=None):
+        url = self.configUrl + '/glb_services/' + name
+
+        rulesStr = ''
+        if rules is not None:
+            for rule in rules:
+                rulesStr = rulesStr + '"{}",'.format(rule)
+            # remove the last ','
+            rulesStr = rulesStr[:-1]
+
+        # a location is a dict of list, with:
+        #   list[0] is the monitoring name
+        #   list[1] is the IP of the location (one IP per location allowed for now)
+        locationsStr = ''
+        locationsOrderStr = ''
+        for key,value in locations.iteritems():
+            locationsStr = locationsStr + '{{"monitors": [ "{}" ], "ips": [ "{}" ], "location": "{}"}},'.format(value[0], value[1], key)
+            locationsOrderStr = locationsOrderStr + '"{}",'.format(key)
+        # remove the last ','
+        locationsStr = locationsStr[:-1]
+        locationsOrderStr = locationsOrderStr[:-1]
+        #print locationsStr
+
+        domainsStr = ''
+        for domain in domains:
+            domainsStr = domainsStr + '"{}",'.format(domain)
+        domainsStr = domainsStr[:-1]
+
+        config = json.loads('{{"properties": {{"basic": {{"rules": [ {} ], "location_settings": [ {} ], "enabled": true, "algorithm": "{}", "chained_location_order": [ {} ], "domains": [ {} ] }} }} }}'.format(rulesStr, locationsStr, algorithm, locationsOrderStr, domainsStr))
+
+        res = self._push_config(url, config, extra=extra)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to add GLB service" +
+                    " Result: {}, {}".format(res.status_code, res.text))
+
     def list_backups(self):
         if self.version < 3.9:
             raise Exception("Backups require vTM 11.0 or newer")
@@ -368,6 +452,20 @@ class Vtm(Vadc):
             raise Exception("Failed to upload Backup." +
                 " Result: {}, {}".format(res.status_code, res.text))
 
+    def upload_extra_file(self, name, filename):
+        url = self.configUrl + "/extra_files/" + name
+        res = self._upload_raw_binary(url, filename)
+        if res.status_code != 201 and res.status_code != 204:
+            raise Exception("Failed to upload file." +
+                " Result: {}, {}".format(res.status_code, res.text))
+
+    def upload_dns_zone_file(self, name, filename):
+        url = self.configUrl + "/dns_server/zone_files/" + name
+        res = self._upload_raw_binary(url, filename)
+        if res.status_code != 201 and res.status_code != 204:
+            raise Exception("Failed to upload file." +
+                " Result: {}, {}".format(res.status_code, res.text))
+
     def upload_action_program(self, name, filename):
         url = self.configUrl + "/action_programs/" + name
         res = self._upload_raw_binary(url, filename)
@@ -407,4 +505,15 @@ class Vtm(Vadc):
             raise Exception("Failed to Set Action: {}".format(action) +
                 " for Event: {}.".format(event) +
                 " Result: {}, {}".format(res.status_code, res.text))
+
+    def set_global_settings(self, settings=None):
+        if settings is None:
+            return
+
+        url = self.configUrl + "/global_settings"
+        jsonsettings = json.loads(settings, encoding="utf-8")
+
+        res = self._push_config(url, jsonsettings)
+        if res.status_code != 201 and res.status_code != 200:
+            raise Exception("Failed to set global settings. Result: {}, {}".format(res.status_code, res.text))
 
